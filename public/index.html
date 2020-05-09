@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="chat">
+        <h1 id="chat-title">Easy Chat</h1>
+        <ul id="chat-log"></ul>
+        <form id="chat-form">
+            <input type="text" id="input-name" readonly placeholder="Name">
+            <input type="text" id="input-text" autofocus placeholder="Right down hear!">
+            <button type="button" id="btn-submit">Submit</button>
+        </form>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io.connect()
+        socket.on('post', (time, name, text) => {
+            text = `${time}: ${name} &gt; ${text}`
+            addText(text)
+        })
+        socket.on('login', (time, name) => {
+            if (name !== null) {
+                text = `${time}: ${name}さんが入室しました。`
+                addText(text)
+            }
+        })
+        socket.on('logout', (time, name) => {
+            if (name !== null) {
+                text = `${time}: ${name}さんが退室しました。`
+                addText(text)
+            }
+        })
+        const name = prompt('Input your name.')
+        document.getElementById ('input-name').value = name
+        if (name !== null) {
+            socket.emit('login', name)
+        }
+        document.getElementById('btn-submit').addEventListener('click', () => {
+            const input = document.getElementById('input-text')
+            const text = input.value
+            if (text !== '') {
+                socket.emit('post', name, text)
+                input.value = ''
+            }
+        }, false)
+        const addText = (text) => {
+            const li = document.createElement('li')
+            li.innerHTML = text
+            const ul = document.getElementById('chat-log')
+            ul.appendChild(li)
+        }
+    </script>
+</body>
+</html>
