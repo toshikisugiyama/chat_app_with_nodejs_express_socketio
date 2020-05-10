@@ -20,7 +20,8 @@ io.sockets.on('connection', socket => {
     socket.on('post', (name, text) => {
         // 接続しているユーザー全員にpostを送信
         const time = new Date().toJSON()
-        io.sockets.emit('post', time, name, text)
+        socket.emit('self-post', time, name, text)
+        socket.broadcast.emit('others-post', time, name, text)
     })
     socket.on('disconnect', () => {
         // 接続しているユーザー全員にlogoutを送信

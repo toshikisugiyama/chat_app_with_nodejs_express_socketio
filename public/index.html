@@ -3,55 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Chat</title>
+    <title>Chat</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <div class="chat">
-        <h1 id="chat-title">Easy Chat</h1>
-        <ul id="chat-log"></ul>
-        <form id="chat-form">
-            <input type="text" id="input-name" readonly placeholder="Name">
-            <input type="text" id="input-text" autofocus placeholder="Right down hear!">
-            <button type="button" id="btn-submit">Submit</button>
+    <header class="header">
+        <h1 class="header__title">Chat</h1>
+        <span id="user-name" class="header__name"></span>
+    </header>
+    <main class="chat">
+        <ul id="chat-log" class="chat__log"></ul>
+    </main>
+    <footer class="footer">
+        <form class="footer__form">
+            <input type="text" id="message-box" class="footer__form__message" autofocus placeholder="Right down the message!">
+            <button type="button" id="btn-submit" class="footer__form__button">Submit</button>
         </form>
-    </div>
+    </footer>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io.connect()
-        socket.on('post', (time, name, text) => {
-            text = `${time}: ${name} &gt; ${text}`
-            addText(text)
+        socket.on('self-post', (time, name, text) => {
+            const content = document.createElement('div')
+            content.className = 'self'
+            createMessageNode(content, text, time, name)
+        })
+        socket.on('others-post', (time, name, text) => {
+            const content = document.createElement('div')
+            content.className = 'others'
+            createMessageNode(content, text, time, name)
         })
         socket.on('login', (time, name) => {
             if (name !== null) {
+                const content = document.createElement('p')
+                content.className = 'log'
                 text = `${time}: ${name}さんが入室しました。`
-                addText(text)
+                content.innerText = text
+                createMessageNode(content)
             }
         })
         socket.on('logout', (time, name) => {
             if (name !== null) {
+                const content = document.createElement('p')
+                content.className = 'log'
                 text = `${time}: ${name}さんが退室しました。`
-                addText(text)
+                content.innerText = text
+                createMessageNode(content)
             }
         })
         const name = prompt('Input your name.')
-        document.getElementById ('input-name').value = name
+        document.getElementById ('user-name').innerText = name
         if (name !== null) {
             socket.emit('login', name)
         }
         document.getElementById('btn-submit').addEventListener('click', () => {
-            const input = document.getElementById('input-text')
+            const input = document.getElementById('message-box')
             const text = input.value
             if (text !== '') {
                 socket.emit('post', name, text)
                 input.value = ''
             }
         }, false)
-        const addText = (text) => {
-            const li = document.createElement('li')
-            li.innerHTML = text
+        const createMessageNode = (content, text, time, name) => {
+            content.classList.add('chat__log__container__contents')
+            if (!!text && !time) {
+                const textBox = createNode('div', 'chat__log__container__contents__text', text)
+                content.appendChild(textBox)
+            }
+            if (!!text && !!name) {
+                const textBox = createNode('div', 'chat__log__container__contents__wrapper__text', text)
+                const nameBox = createNode('div', 'chat__log__container__contents__wrapper__username', name)
+                const wrappedBox = wrapContents('div', 'chat__log__container__contents__wrapper', textBox)
+                wrappedBox.appendChild(nameBox)
+                content.appendChild(wrappedBox)
+            }
+            if (!!time) {
+                const timeBox = createNode('span', 'chat__log__container__contents__time', time)
+                content.appendChild(timeBox)
+            }
+            createMessage(content)
+        }
+        const createNode = (element, classname, content) => {
+            const wrapperBox = document.createElement(element)
+            wrapperBox.className = classname
+            wrapperBox.innerText = content
+            return wrapperBox
+        }
+        const wrapContents = (element, classname, content) => {
+            const wrapper = document.createElement(element)
+            wrapper.className = classname
+            wrapper.appendChild(content)
+            return wrapper
+        }
+        const createMessage = (content) => {
+            const li = wrapContents('li', 'chat__log__container', content)
             const ul = document.getElementById('chat-log')
             ul.appendChild(li)
         }
